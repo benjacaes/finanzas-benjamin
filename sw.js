@@ -1,6 +1,6 @@
 /* Mis Finanzas: funciona sin conexión.
    Si cambias la página, sube también este archivo con un número de versión nuevo. */
-const VERSION = 'mf-v2';
+const VERSION = 'mf-v3';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.png'];
 
 self.addEventListener('install', e => {

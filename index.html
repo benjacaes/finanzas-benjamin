@@ -74,7 +74,7 @@ svg.i.sm{width:18px;height:18px}
 .login-in{width:min(440px,100%);margin:auto;display:flex;flex-direction:column;gap:22px;padding-top:clamp(40px,12vh,120px)}
 .logo-tile{width:68px;height:68px;border-radius:20px;display:grid;place-items:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;backdrop-filter:blur(8px)}
 .logo-tile svg{width:34px;height:34px;fill:currentColor;stroke:none}
-.login h1{font-size:clamp(36px,7vw,48px);font-weight:500;line-height:1.05;letter-spacing:-.01em}
+.login h1{font-size:clamp(30px,6.6vw,42px);text-wrap:balance;font-weight:500;line-height:1.05;letter-spacing:-.01em}
 .login p.sub{color:#CFC9EE;font-size:16px;max-width:36ch}
 .login form{display:flex;flex-direction:column;gap:12px;margin-top:6px}
 .pw{position:relative}
@@ -589,13 +589,33 @@ tr.fresh td{animation:flashtd 2s ease-out .1s both}
 @keyframes fabping{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.45);opacity:0}}
 @keyframes sheetin{from{transform:translateY(100%)}}
 @keyframes sheetout{to{transform:translateY(100%)}}
+
+.remember{display:flex;align-items:center;gap:12px;margin:2px 2px 0;color:#CFC9EE;font-size:14.5px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.login .tg{background:rgba(8,9,16,.6);border-color:rgba(255,255,255,.22)}
+.login .tg:checked{background:rgba(192,180,254,.28);border-color:var(--primary)}
+.field input[type=date]{display:block;width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;text-align:left;line-height:1.2}
+.field input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.2em}
+@media (max-width:640px){
+  .overlay{inset:auto;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);bottom:auto}
+  .modal{max-height:calc(var(--vvh,100dvh) - 10px)}
+  .modal .fgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .modal .field input,.modal .field select{height:44px;padding:0 12px}
+  .modal .mh{margin-bottom:12px} .modal h2{font-size:20px}
+  .modal .seg button{height:38px}
+  .overlay.kb .modal::before{display:none}
+  .overlay.kb .modal{padding-top:16px;padding-bottom:14px;border-radius:22px 22px 0 0}
+  .overlay.kb .mh{margin-bottom:8px}
+  .overlay.kb .mfoot{margin-top:12px}
+  .modal .mfoot{position:sticky;z-index:2;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:16px -20px calc(-24px - env(safe-area-inset-bottom,0px));padding:14px 20px calc(24px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(17,18,31,0),var(--surface-2) 28%)}
+  .overlay.kb .modal .mfoot{bottom:-14px;margin:12px -20px -14px;padding:12px 20px 14px}
+}
 </style>
 </head>
 <body>
 <section class="login" id="login" aria-label="Acceso">
   <div class="login-in" id="loginBox">
     <div class="logo-tile" data-logo></div>
-    <h1>Entra a tus finanzas</h1>
+    <h1>Hola Benjamin Carrasco, bienvenido a tu app</h1>
     <p class="sub">Ingresos, gastos, presupuestos, deudas y metas en un solo lugar, en pesos chilenos.</p>
     <form id="loginForm" autocomplete="off" novalidate>
       <div class="pw">
@@ -603,6 +623,7 @@ tr.fresh td{animation:flashtd 2s ease-out .1s both}
         <input id="pw" name="pw" type="password" placeholder="Clave de acceso" autocomplete="current-password" aria-label="Clave de acceso" autocapitalize="none" spellcheck="false">
         <button type="button" class="eye" id="pwEye" aria-label="Mostrar clave" data-i="eye"></button>
       </div>
+      <label class="remember" for="rem"><input type="checkbox" class="tg" id="rem" checked><span>Recordar sesión en este dispositivo</span></label>
       <div class="err" id="loginErr" role="alert" aria-live="polite"></div>
       <button class="btn-main" id="loginBtn" type="submit">Ingresar</button>
     </form>
@@ -1869,7 +1890,7 @@ const ACT={
   'new-activo':()=>activoModal(),
   'del-activo':t=>{const id=t.dataset.id;S.activos=S.activos.filter(x=>x.id!==id);commit('Activo eliminado');},
   snap:()=>{S.hist=S.hist.filter(h=>h.k!==NOWKEY);S.hist.push({k:NOWKEY,a:Math.round(sumAct()),p:Math.round(totDeuda())});commit('Cierre de '+keyLabel(NOWKEY)+' guardado');},
-  logout:()=>{try{sessionStorage.removeItem('mf_auth');}catch(e){}closeDrawer();closeSheet();showLogin();}
+  logout:()=>{try{sessionStorage.removeItem('mf_auth');}catch(e){}try{localStorage.removeItem('mf_remember');}catch(e){}closeDrawer();closeSheet();showLogin();}
 };
 document.addEventListener('click',e=>{
   const bp=$('#bellPanel'); if(!bp.hidden&&!e.target.closest('.anchor')){bp.hidden=true;$('#bellBtn').setAttribute('aria-expanded','false');}
@@ -1904,6 +1925,17 @@ document.addEventListener('keydown',e=>{
   }
 });
 ov.addEventListener('mousedown',e=>{if(e.target===ov)closeModal();});
+/* teclado en el móvil: la ventana se ajusta al área visible sobre el teclado */
+(function(){
+  const vv=window.visualViewport; if(!vv)return;
+  function fit(){
+    ov.style.setProperty('--vvh',vv.height+'px'); ov.style.setProperty('--vvt',vv.offsetTop+'px');
+    ov.classList.toggle('kb',vv.height<window.innerHeight*0.78);
+  }
+  vv.addEventListener('resize',fit); vv.addEventListener('scroll',fit); fit();
+  modal.addEventListener('focusin',e=>{const t=e.target; if(!t.matches||!t.matches('input,select,textarea'))return;
+    setTimeout(()=>{try{t.scrollIntoView({block:'center',behavior:'smooth'});}catch(_){}},320);});
+})();
 $('#scrim').addEventListener('click',closeDrawer);
 $('#burger').addEventListener('click',()=>{$('#rail').classList.contains('drawer')?closeDrawer():openDrawer();});
 $('#bellBtn').addEventListener('click',e=>{e.stopPropagation();bellPanel();});
@@ -1939,7 +1971,7 @@ $('#loginForm').addEventListener('submit',async e=>{
   btn.classList.add('loading'); const t0=Date.now();
   const ok=await checkPw($('#pw').value); const wait=450-(Date.now()-t0); if(wait>0&&!MO.reduced())await MO.sleep(wait);
   btn.classList.remove('loading');
-  if(ok){fails=0;try{sessionStorage.setItem('mf_auth','1');}catch(_){}err.textContent='';btn.disabled=true;await enter();btn.disabled=false;return;}
+  if(ok){fails=0;try{sessionStorage.setItem('mf_auth','1');}catch(_){}try{if($('#rem').checked)localStorage.setItem('mf_remember','1');else localStorage.removeItem('mf_remember');}catch(_){}err.textContent='';btn.disabled=true;await enter();btn.disabled=false;return;}
   fails++; $('#pw').value=''; box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');
   if(fails>=5){
     btn.disabled=true;let s=30;err.textContent='Demasiados intentos. Espera '+s+' s.';
@@ -1953,7 +1985,7 @@ $('#loginForm').addEventListener('submit',async e=>{
   $$('[data-i]').forEach(e=>{e.innerHTML=icon(e.dataset.i);});
   $$('[data-logo]').forEach(e=>{e.innerHTML=IC.logo;});
   readyP=(async()=>{await initStore();S=await loadState();})();
-  let authed=false; try{authed=sessionStorage.getItem('mf_auth')==='1';}catch(e){}
+  let authed=false; try{authed=sessionStorage.getItem('mf_auth')==='1';}catch(e){} if(!authed)try{authed=localStorage.getItem('mf_remember')==='1';}catch(e){}
   if(authed)enter(true); else setTimeout(()=>{try{$('#pw').focus();}catch(e){}},80);
 })();
 </script>
